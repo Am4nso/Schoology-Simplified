@@ -59,9 +59,11 @@ namespace Schoology_Simplified
             ChromeOptions options_two = new ChromeOptions();
             options_two.AddArgument("start-maximized");
             options_two.AddArgument("headless");
-            chrome = new ChromeDriver(path, options_two);
 
             driverService = ChromeDriverService.CreateDefaultService(path + "schoology/");
+            driverService.HideCommandPromptWindow = true;
+
+            chrome = new ChromeDriver(driverService, options_two);
 
         }
 
