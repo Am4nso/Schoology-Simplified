@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using System.Windows.Forms;
 
 namespace Schoology_Simplified
@@ -17,10 +18,7 @@ namespace Schoology_Simplified
     {
 
         private string currentPeriod;
-
-        public static Thread thread_one;
-        public static Thread thread_two;
-        public static Thread thread_three;
+        private readonly System.Timers.Timer myTimer = new System.Timers.Timer(500);
 
         private bool in_conference = false;
 
@@ -55,18 +53,16 @@ namespace Schoology_Simplified
 
             pictureBox3.Load("https://github.com/Am4nso/schoology-simplified-database/blob/main/schedules/" + grade + ".png?raw=true");
 
-            thread_one = new Thread(new ThreadStart(InformationUpdater))
-            {
-                IsBackground = true
-            };
-            thread_one.Start();
-
-            thread_two = new Thread(new ThreadStart(Conference_Checker))
-            {
-                IsBackground = true
-            };
-            thread_two.Start();
         }
+
+
+        private void HomePage_Load(object sender, EventArgs e)
+        {
+            myTimer.Elapsed += InformationUpdater;
+            myTimer.Elapsed += ConferenceCheck;
+            myTimer.Start();
+        }
+
 
         private void JoinConferenceClick(object sender, EventArgs e)
         {
@@ -110,12 +106,6 @@ namespace Schoology_Simplified
                     return;
                 }
 
-                thread_three = new Thread(new ThreadStart(Check_Browser))
-                {
-                    IsBackground = true
-                };
-                thread_three.Start();
-
             }).Start();
         }
 
@@ -141,15 +131,36 @@ namespace Schoology_Simplified
             return isClosed;
         }
 
-        private void Check_Browser()
-        {
-            while (current_driver == null)
+        private void ConferenceCheck(object sender, ElapsedEventArgs e) {
+            if (currentPeriod == null)
             {
-                continue;
+                return;
             }
-            while (true)
-            {
 
+            if (Schoology.HasConferenceStarted(currentPeriod))
+            {
+                Invoke(new Action(() =>
+                {
+                    if (!in_conference)
+                    {
+                        button1.Enabled = true;
+                    }
+                    label4.Text = "Conference has started!";
+                    label4.Location = new System.Drawing.Point(590, 64);
+                }));
+            }
+            else
+            {
+                Invoke(new Action(() =>
+                {
+                    button1.Enabled = false;
+                    label4.Text = "Conference has not started!";
+                    label4.Location = new System.Drawing.Point(575, 64);
+                }));
+            }
+
+            if (current_driver != null && in_conference)
+            {
                 if (IsBrowserClosed(current_driver))
                 {
                     Invoke(new Action(() =>
@@ -161,87 +172,32 @@ namespace Schoology_Simplified
                     }));
 
                     current_driver = null;
-
-                    break;
                 }
             }
         }
 
-        private void Conference_Checker()
+        private void InformationUpdater(object sender, ElapsedEventArgs e)
         {
+            string upcoming = Schoology.NextPeriod();
 
-            while (true)
+            string starting_in = Schoology.NextPeriodIn();
+
+            string current_period = Schoology.CurrentPeriod();
+
+            currentPeriod = current_period;
+
+            Invoke(new Action(() =>
             {
-                Thread.Sleep(2);
+                label6.Text = "Upcoming: " + upcoming;
 
-                if (currentPeriod == null)
-                {
-                    continue;
-                }
+                label7.Text = "Next period: " + starting_in;
 
-                if (Schoology.HasConferenceStarted(currentPeriod))
-                {
-                    Invoke(new Action(() =>
-                    {
-                        if (!in_conference)
-                        {
-                            button1.Enabled = true;
-                        }
-                        label4.Text = "Conference has started!";
-                        label4.Location = new System.Drawing.Point(590, 64);
-                    }));
-                }
-                else
-                {
-                    Invoke(new Action(() =>
-                    {
-                        button1.Enabled = false;
-                        label4.Text = "Conference has not started!";
-                        label4.Location = new System.Drawing.Point(575, 64);
-                    }));
-                }
-            }
-        }
-
-        private void InformationUpdater()
-        {
-            Thread.Sleep(2);
-            while (true)
-            {
-                string upcoming = Schoology.NextPeriod();
-
-                string starting_in = Schoology.NextPeriodIn();
-
-                string current_period = Schoology.CurrentPeriod();
-
-                currentPeriod = current_period;
-
-                Invoke(new Action(() =>
-                {
-                    label6.Text = "Upcoming: " + upcoming;
-
-                    label7.Text = "Next period: " + starting_in;
-
-                    label5.Text = "Current: " + current_period;
-                }));
-            }
-
+                label5.Text = "Current: " + current_period;
+            }));
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            if (thread_one.IsAlive)
-            {
-                thread_one.Abort();
-            }
-            if (thread_two.IsAlive)
-            {
-                thread_two.Abort();
-            }
-            if (thread_three != null && thread_three.IsAlive)
-            {
-                thread_three.Abort();
-            }
 
             if (current_driver != null)
             {
@@ -252,5 +208,6 @@ namespace Schoology_Simplified
 
             base.OnClosing(e);
         }
+
     }
 }

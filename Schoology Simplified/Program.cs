@@ -22,7 +22,7 @@ namespace Schoology_Simplified
         public static IWebDriver chrome;
 
 
-        private static CookieContainer cookies = new CookieContainer();
+        private static readonly CookieContainer cookies = new CookieContainer();
 
         private static Dictionary<string, Dictionary<string, string>> schedule;
         public static Dictionary<string, string> course_to_id;

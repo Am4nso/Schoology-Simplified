@@ -90,8 +90,7 @@ namespace Schoology_Simplified
             }
         }
 
-        private void LoginPage_FormClosing(object sender, FormClosingEventArgs e)
-        {
+        protected override void OnClosing(CancelEventArgs e) {
             Application.Exit();
         }
     }
