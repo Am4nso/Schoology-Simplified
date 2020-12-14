@@ -3,7 +3,6 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -67,7 +66,7 @@ namespace Schoology_Simplified
 
         }
 
-        public static async Task<HtmlAgilityPack.HtmlDocument> LogIn(string username, string password, string grade)
+        public static async Task<HtmlAgilityPack.HtmlDocument> LogIn(string username, string password, string grade, ProgressBar pb=null)
         {
             HttpClientHandler handler = new HttpClientHandler
             {
@@ -76,11 +75,26 @@ namespace Schoology_Simplified
 
             HttpClient client = new HttpClient(handler);
 
+            if (pb != null)
+            {
+                pb.Invoke((MethodInvoker)delegate {
+                    pb.Value = 10;
+                });
+            }
+
             string responseString = await client.GetStringAsync("https://inpsa.schoology.com/login?&school=2382278049");
 
             HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
 
             document.LoadHtml(responseString);
+
+            if (pb != null)
+            {
+                pb.Invoke((MethodInvoker)delegate
+                {
+                    pb.Value = 20;
+                });
+            }
 
             string form_id = document.DocumentNode.Descendants("input").Where(node => node.Attributes["name"].Value == "form_build_id").FirstOrDefault().Attributes["value"].Value;
 
@@ -93,7 +107,16 @@ namespace Schoology_Simplified
                 { "form_build_id", form_id },
             };
 
+
             var content = new FormUrlEncodedContent(values);
+
+            if (pb != null)
+            {
+                pb.Invoke((MethodInvoker)delegate
+                {
+                    pb.Value = 25;
+                });
+            }
 
             var response = await client.PostAsync("https://inpsa.schoology.com/login?&school=2382278049", content);
 
@@ -108,11 +131,27 @@ namespace Schoology_Simplified
                 return null;
             }
 
+            if (pb != null)
+            {
+                pb.Invoke((MethodInvoker)delegate
+                {
+                    pb.Value = 40;
+                });
+            }
+
             responseCookies = cookies.GetCookies(new Uri("https://inpsa.schoology.com")).Cast<System.Net.Cookie>();
 
             HtmlAgilityPack.HtmlDocument finalDocument;
 
             chrome.Url = "https://inpsa.schoology.com/login?&school=2382278049";
+
+            if (pb != null)
+            {
+                pb.Invoke((MethodInvoker)delegate
+                {
+                    pb.Value = 60;
+                });
+            }
 
             foreach (System.Net.Cookie cookie in responseCookies)
             {
@@ -123,6 +162,14 @@ namespace Schoology_Simplified
 
             chrome.Url = "https://inpsa.schoology.com/login?&school=2382278049";
 
+            if (pb != null)
+            {
+                pb.Invoke((MethodInvoker)delegate
+                {
+                    pb.Value = 80;
+                });
+            }
+
             chrome.FindElement(By.CssSelector("button._1SIMq._2kpZl._3OAXJ._13cCs._3_bfp._2M5aC._24avl._3v0y7._2s0LQ._3ghFm._3LeCL._31GLY._9GDcm._1D8fw.util-height-six-3PHnk.Z_KgC.fjQuT.uQOmx")).Click();
 
             chrome.FindElement(By.CssSelector("a._2JX1Q._3VHSs._1k0yk._3_bfp._1tpub.dVlNp._3v0y7._3eD4l._3ghFm._3LeCL._3lLLU._2gJbx.util-text-decoration-none-1n0lI")).Click();
@@ -132,6 +179,14 @@ namespace Schoology_Simplified
             finalDocument.LoadHtml(chrome.PageSource);
 
             client.Dispose();
+
+            if (pb != null)
+            {
+                pb.Invoke((MethodInvoker)delegate
+                {
+                    pb.Value = 95;
+                });
+            }
 
             var path = System.IO.Path.GetTempPath();
             File.WriteAllText(path + "schoology/information.json", "{\"username\": \"" + username + "\", \"password\": \"" + password + "\",\"grade\":\"" + grade + "\"}");
@@ -411,30 +466,21 @@ namespace Schoology_Simplified
     {
 
         [STAThread]
-        static async Task Main()
+        static void Main()
         {
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnApplicationExit);
 
             // Initializes Schoology
             Schoology schoology = new Schoology();
 
-            var path = System.IO.Path.GetTempPath();
+            var path = Path.GetTempPath();
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
             if (File.Exists(path + "schoology/information.json"))
             {
-                string information = File.ReadAllText(path + "schoology/information.json");
-
-                Dictionary<string, string> product = JsonConvert.DeserializeObject<Dictionary<string, string>>(information);
-
-                var document = await Schoology.LogIn(product["username"], product["password"], product["grade"]);
-
-                Application.Run(new HomePage(document, product["grade"]));
-
-                return;
-
+                Application.Run(new LoadingPage());
             }
 
             Application.Run(new LoginPage());

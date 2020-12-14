@@ -188,16 +188,25 @@ namespace Schoology_Simplified
 
             Invoke(new Action(() =>
             {
-                label6.Text = "Upcoming: " + upcoming;
 
-                label7.Text = "Next period: " + starting_in;
+                try
+                {
+                    label6.Text = "Upcoming: " + upcoming;
 
-                label5.Text = "Current: " + current_period;
+                    label7.Text = "Next period: " + starting_in;
+
+                    label5.Text = "Current: " + current_period;
+                }catch (ObjectDisposedException)
+                {
+                    
+                }
             }));
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
+
+            myTimer.Stop();
 
             if (current_driver != null)
             {

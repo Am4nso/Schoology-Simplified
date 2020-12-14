@@ -22,6 +22,7 @@ namespace Schoology_Simplified
         private void GoButtonClick(object sender, EventArgs e)
         {
             button1.Enabled = false;
+            label5.Visible = false;
             new Thread(async () =>
             {
                 string username = textBox1.Text;
@@ -48,6 +49,19 @@ namespace Schoology_Simplified
                 {
                     grade = "12AB";
                 }
+                else
+                {
+                    Invoke(new Action(() =>
+                    {
+                        button1.Enabled = true;
+
+                        label5.Text = "Please choose your grade.";
+
+                        this.label5.Location = new System.Drawing.Point(295, 511);
+                        label5.Visible = true;
+                    }));
+                    return;
+                }
 
                 HtmlAgilityPack.HtmlDocument data = await Schoology.LogIn(username, password, grade);
 
@@ -59,6 +73,9 @@ namespace Schoology_Simplified
 
                         textBox1.Clear();
                         textBox2.Clear();
+
+                        label5.Text = "Incorrect username or password.";
+                        this.label5.Location = new System.Drawing.Point(278, 511);
 
                         label5.Visible = true;
                     }));

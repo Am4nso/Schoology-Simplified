@@ -116,11 +116,11 @@ namespace Schoology_Simplified
             this.label5.AutoSize = true;
             this.label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 11F);
             this.label5.ForeColor = System.Drawing.Color.Red;
-            this.label5.Location = new System.Drawing.Point(278, 511);
+            this.label5.Location = new System.Drawing.Point(295, 511);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(227, 18);
+            this.label5.Size = new System.Drawing.Size(185, 18);
             this.label5.TabIndex = 16;
-            this.label5.Text = "Incorrect username or password.";
+            this.label5.Text = "Please choose your grade.";
             this.label5.Visible = false;
             // 
             // textBox1
