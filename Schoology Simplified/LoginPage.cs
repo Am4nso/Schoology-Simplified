@@ -23,6 +23,16 @@ namespace Schoology_Simplified
         {
             button1.Enabled = false;
             label5.Visible = false;
+
+            textBox1.Enabled = false;
+            textBox2.Enabled = false;
+
+            radioButton1.Enabled = false;
+            radioButton2.Enabled = false;
+            radioButton3.Enabled = false;
+            radioButton4.Enabled = false;
+            radioButton5.Enabled = false;
+
             new Thread(async () =>
             {
                 string username = textBox1.Text;
@@ -55,6 +65,15 @@ namespace Schoology_Simplified
                     {
                         button1.Enabled = true;
 
+                        textBox1.Enabled = true;
+                        textBox2.Enabled = true;
+
+                        radioButton1.Enabled = true;
+                        radioButton2.Enabled = true;
+                        radioButton3.Enabled = true;
+                        radioButton4.Enabled = true;
+                        radioButton5.Enabled = true;
+
                         label5.Text = "Please choose your grade.";
 
                         this.label5.Location = new System.Drawing.Point(295, 511);
@@ -69,7 +88,6 @@ namespace Schoology_Simplified
                 {
                     Invoke(new Action(() =>
                     {
-                        button1.Enabled = true;
 
                         textBox1.Clear();
                         textBox2.Clear();
@@ -77,7 +95,18 @@ namespace Schoology_Simplified
                         label5.Text = "Incorrect username or password.";
                         this.label5.Location = new System.Drawing.Point(278, 511);
 
+                        button1.Enabled = true;
+
                         label5.Visible = true;
+
+                        textBox1.Enabled = true;
+                        textBox2.Enabled = true;
+
+                        radioButton1.Enabled = true;
+                        radioButton2.Enabled = true;
+                        radioButton3.Enabled = true;
+                        radioButton4.Enabled = true;
+                        radioButton5.Enabled = true;
                     }));
 
                     return;
@@ -107,8 +136,14 @@ namespace Schoology_Simplified
             }
         }
 
-        protected override void OnClosing(CancelEventArgs e) {
-            Application.Exit();
+        private void LoginPage_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (Schoology.chrome != null)
+            {
+                Schoology.chrome.Quit();
+            }
+
+            Environment.Exit(Environment.ExitCode);
         }
     }
 }

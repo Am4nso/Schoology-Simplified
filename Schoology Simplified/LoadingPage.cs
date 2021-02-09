@@ -27,9 +27,7 @@ namespace Schoology_Simplified
             new Thread(async () =>
             {
 
-                var path = Path.GetTempPath();
-
-                string information = File.ReadAllText(path + "schoology/information.json");
+                string information = File.ReadAllText(Schoology.path + "information.json");
 
                 Dictionary<string, string> product = JsonConvert.DeserializeObject<Dictionary<string, string>>(information);
 
@@ -37,15 +35,33 @@ namespace Schoology_Simplified
                 
                 Invoke(new Action(() =>
                 {
-                    HomePage page = new HomePage(document, product["grade"]);
 
-                    page.Show();
-
-                    this.Hide();
+                    if (document == null)
+                    {
+                        LoginPage page = new LoginPage();
+                        page.Show();
+                        this.Hide();
+                    }else
+                    {
+                        HomePage page = new HomePage(document, product["grade"]);
+                        page.Show();
+                        this.Hide();
+                    }
+                    
 
                 }));
 
             }).Start();
+        }
+
+        private void LoadingPage_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (Schoology.chrome != null)
+            {
+                Schoology.chrome.Quit();
+            }
+
+            Environment.Exit(Environment.ExitCode);
         }
     }
 }

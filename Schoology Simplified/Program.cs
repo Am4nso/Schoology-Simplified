@@ -20,6 +20,7 @@ namespace Schoology_Simplified
         public static IEnumerable<System.Net.Cookie> responseCookies;
         public static IWebDriver chrome;
 
+        public static string path = System.IO.Path.GetTempPath() + "schoology-simplified/";
 
         private static readonly CookieContainer cookies = new CookieContainer();
 
@@ -31,38 +32,24 @@ namespace Schoology_Simplified
         public Schoology()
         {
 
-            var path = System.IO.Path.GetTempPath();
-
-            if (!Directory.Exists(path + "schoology/")) {
-                Directory.CreateDirectory(path + "schoology/");
+            if (!Directory.Exists(path)) {
+                Directory.CreateDirectory(path);
             }
 
-
-            if (File.Exists(path + "schoology/schedule.json"))
-            {
-                string scheduleText = File.ReadAllText(path + "schoology/schedule.json");
-
-                schedule = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(scheduleText);
-
-                string courseText = File.ReadAllText(path + "schoology/course_to_id.json");
-
-                course_to_id = JsonConvert.DeserializeObject<Dictionary<string, string>>(courseText);
-            }
-
-            if (!File.Exists(path + "schoology/chromedriver.exe"))
+            if (!File.Exists(path + "chromedriver.exe"))
             {
                 byte[] bytes = Properties.Resources.chromedriver;
-                File.WriteAllBytes(path + "schoology/chromedriver.exe", bytes);
+                File.WriteAllBytes(path + "chromedriver.exe", bytes);
             }
 
             ChromeOptions options_two = new ChromeOptions();
             options_two.AddArgument("start-maximized");
-            options_two.AddArgument("headless");
+            //options_two.AddArgument("headless");
 
-            driverService = ChromeDriverService.CreateDefaultService(path + "schoology/");
+            driverService = ChromeDriverService.CreateDefaultService(path);
             driverService.HideCommandPromptWindow = true;
 
-            chrome = new ChromeDriver(driverService, options_two);
+            chrome = new ChromeDriver(path, options_two);
 
         }
 
@@ -122,8 +109,6 @@ namespace Schoology_Simplified
 
             var responseStringPOST = await response.Content.ReadAsStringAsync();
 
-            HtmlAgilityPack.HtmlDocument documentPOST = new HtmlAgilityPack.HtmlDocument();
-
             document.LoadHtml(responseStringPOST);
 
             if (document.GetElementbyId("login-container") != null)
@@ -140,8 +125,6 @@ namespace Schoology_Simplified
             }
 
             responseCookies = cookies.GetCookies(new Uri("https://inpsa.schoology.com")).Cast<System.Net.Cookie>();
-
-            HtmlAgilityPack.HtmlDocument finalDocument;
 
             chrome.Url = "https://inpsa.schoology.com/login?&school=2382278049";
 
@@ -174,9 +157,7 @@ namespace Schoology_Simplified
 
             chrome.FindElement(By.CssSelector("a._2JX1Q._3VHSs._1k0yk._3_bfp._1tpub.dVlNp._3v0y7._3eD4l._3ghFm._3LeCL._3lLLU._2gJbx.util-text-decoration-none-1n0lI")).Click();
 
-            finalDocument = new HtmlAgilityPack.HtmlDocument();
-
-            finalDocument.LoadHtml(chrome.PageSource);
+            document.LoadHtml(chrome.PageSource);
 
             client.Dispose();
 
@@ -188,12 +169,11 @@ namespace Schoology_Simplified
                 });
             }
 
-            var path = System.IO.Path.GetTempPath();
-            File.WriteAllText(path + "schoology/information.json", "{\"username\": \"" + username + "\", \"password\": \"" + password + "\",\"grade\":\"" + grade + "\"}");
+            File.WriteAllText(path + "information.json", "{\"username\": \"" + username + "\", \"password\": \"" + password + "\",\"grade\":\"" + grade + "\"}");
 
             await SetScheduleAsync(grade);
 
-            return finalDocument;
+            return document;
         }
 
         public static string NextPeriodIn()
@@ -448,15 +428,12 @@ namespace Schoology_Simplified
 
             Dictionary<string, Dictionary<string, Dictionary<string, string>>> product = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, Dictionary<string, string>>>>(response);
 
-            File.WriteAllText(path + "schoology/schedule.json", JsonConvert.SerializeObject(product[grade]));
-
             schedule = product[grade];
 
             string secondResponse = await client.GetStringAsync("https://raw.githubusercontent.com/Am4nso/schoology-simplified-database/main/course_to_id.json");
 
             Dictionary<string, Dictionary<string, string>> newProduct = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(secondResponse);
 
-            File.WriteAllText(path + "schoology/course_to_id.json", JsonConvert.SerializeObject(newProduct[grade]));
             course_to_id = newProduct[grade];
         }
     }
@@ -468,31 +445,20 @@ namespace Schoology_Simplified
         [STAThread]
         static void Main()
         {
-            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnApplicationExit);
-
             // Initializes Schoology
             Schoology schoology = new Schoology();
-
-            var path = Path.GetTempPath();
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            if (File.Exists(path + "schoology/information.json"))
+            if (File.Exists(Schoology.path + "information.json"))
             {
                 Application.Run(new LoadingPage());
+                return;
             }
 
             Application.Run(new LoginPage());
         }
 
-        private static void OnApplicationExit(object sender, EventArgs e)
-        {
-            try
-            {
-                Schoology.chrome.Quit();
-            }
-            catch (Exception) { return; }
-        }
     }
 }

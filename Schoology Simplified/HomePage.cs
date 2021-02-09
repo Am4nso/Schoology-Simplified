@@ -31,12 +31,6 @@ namespace Schoology_Simplified
 
             string first_name = student_name.Split(' ')[0];
 
-            string upcoming = Schoology.NextPeriod();
-
-            string starting_in = Schoology.NextPeriodIn();
-
-            string current_period = Schoology.CurrentPeriod();
-
             InitializeComponent();
 
             label3.Text = grade;
@@ -45,13 +39,7 @@ namespace Schoology_Simplified
 
             label2.Text = "Welcome back, " + first_name + ".";
 
-            label6.Text = "Upcoming: " + upcoming;
-
-            label7.Text = "Next period: " + starting_in;
-
-            label5.Text = "Current: " + current_period;
-
-            pictureBox3.Load("https://github.com/Am4nso/schoology-simplified-database/blob/main/schedules/" + grade + ".png?raw=true");
+            pictureBox3.Load("https://github.com/Am4nso/schoology-simplified-database/blob/main/schedules/" + grade + ".PNG?raw=true");
 
         }
 
@@ -83,27 +71,29 @@ namespace Schoology_Simplified
                         Url = "https://inpsa.schoology.com/login?&school=2382278049"
                     };
 
-                    current_driver = temp_driver;
-
                     foreach (System.Net.Cookie cookie in Schoology.responseCookies)
                     {
 
-                        temp_driver.Manage().Cookies.AddCookie(new Cookie(cookie.Name, cookie.Value));
+                        current_driver.Manage().Cookies.AddCookie(new Cookie(cookie.Name, cookie.Value));
 
                     }
 
-                    temp_driver.Url = "https://inpsa.schoology.com/apps/login/saml/initial?realm=course&realm_id=" + courseID + "&spentityid=9295f7b9ba9a31af8c09d5442f697eb005452c17d&RelayState=https%3A%2F%2Fbigbluebutton.app.schoology.com%2Fhome%3Frealm%3Dsection%26realm_id%3D" + courseID + "%26app_id%3D191034318%26is_ssl%3D1";
+                    current_driver.Url = "https://inpsa.schoology.com/apps/login/saml/initial?realm=course&realm_id=" + courseID + "&spentityid=9295f7b9ba9a31af8c09d5442f697eb005452c17d&RelayState=https%3A%2F%2Fbigbluebutton.app.schoology.com%2Fhome%3Frealm%3Dsection%26realm_id%3D" + courseID + "%26app_id%3D191034318%26is_ssl%3D1";
 
-                    temp_driver.Url = url;
+                    current_driver.Url = url;
                 }
                 catch (Exception)
                 {
+                    if (current_driver != null)
+                    {
+                        current_driver.Quit();
+                    }
+
                     Invoke(new Action(() =>
                     {
                         in_conference = false;
                         button1.Enabled = true;
                     }));
-                    return;
                 }
 
             }).Start();
@@ -114,14 +104,7 @@ namespace Schoology_Simplified
             bool isClosed = false;
             try
             {
-                if (driver == null)
-                {
-                    isClosed = true;
-                }
-                else
-                {
-                    var title = driver.Title;
-                }
+                var title = driver.Title;
             }
             catch (Exception)
             {
@@ -163,17 +146,18 @@ namespace Schoology_Simplified
             {
                 if (IsBrowserClosed(current_driver))
                 {
+                    current_driver = null;
+
                     Invoke(new Action(() =>
                     {
+                        current_driver.Quit();
                         in_conference = false;
 
                         button1.Enabled = true;
-                        current_driver.Quit();
                     }));
-
-                    current_driver = null;
                 }
             }
+
         }
 
         private void InformationUpdater(object sender, ElapsedEventArgs e)
@@ -184,39 +168,40 @@ namespace Schoology_Simplified
 
             string current_period = Schoology.CurrentPeriod();
 
-            currentPeriod = current_period;
-
             Invoke(new Action(() =>
             {
+                label6.Text = "Upcoming: " + upcoming;
 
-                try
+                label7.Text = "Next period: " + starting_in;
+
+                if (string.IsNullOrEmpty(current_period))
                 {
-                    label6.Text = "Upcoming: " + upcoming;
 
-                    label7.Text = "Next period: " + starting_in;
-
+                    label5.Text = "Current: None";
+                    currentPeriod = null;
+                }
+                else
+                {
                     label5.Text = "Current: " + current_period;
-                }catch (ObjectDisposedException)
-                {
-                    
+                    currentPeriod = current_period;
                 }
             }));
         }
 
-        protected override void OnClosing(CancelEventArgs e)
+        private void HomePage_FormClosing(object sender, FormClosingEventArgs e)
         {
 
-            myTimer.Stop();
+            if (Schoology.chrome != null)
+            {
+                Schoology.chrome.Quit();
+            }
 
             if (current_driver != null)
             {
                 current_driver.Quit();
             }
 
-            Application.Exit();
-
-            base.OnClosing(e);
+            Environment.Exit(Environment.ExitCode);
         }
-
     }
 }

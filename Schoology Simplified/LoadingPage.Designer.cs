@@ -81,6 +81,7 @@ namespace Schoology_Simplified
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "LoadingPage";
             this.TopMost = true;
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.LoadingPage_FormClosing);
             this.Load += new System.EventHandler(this.LoadingPage_LoadAsync);
             this.ResumeLayout(false);
             this.PerformLayout();
